@@ -1,4 +1,20 @@
+import React from "react";
+
 export default function RegEditModal({ data, onChange, onSave, onClose }) {
+  const [priceStr, setPriceStr] = React.useState(String(data.basePrice));
+
+  const handlePriceChange = (e) => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    setPriceStr(raw);
+  };
+
+  const handleSave = () => {
+    const parsed = parseInt(priceStr, 10);
+    const finalPrice = !isNaN(parsed) && parsed >= 10 ? parsed : data.basePrice;
+    onChange({ ...data, basePrice: finalPrice });
+    onSave();
+  };
+
   return (
     <div className="modal-overlay open">
       <div className="modal">
@@ -16,7 +32,7 @@ export default function RegEditModal({ data, onChange, onSave, onClose }) {
             <label className="form-label">Role</label>
             <select className="form-input" value={data.role} onChange={e => onChange({ ...data, role: e.target.value })}>
               <option value="BAT">🏏 Batsman</option>
-              <option value="BWL">🎯 Bowler</option>
+              <option value="BWL">⚾ Bowler</option>
               <option value="AR">⚡ All-Rounder</option>
               <option value="WK">🧤 Keeper</option>
             </select>
@@ -24,25 +40,24 @@ export default function RegEditModal({ data, onChange, onSave, onClose }) {
           <div className="form-row">
             <label className="form-label">Category</label>
             <select className="form-input" value={data.category} onChange={e => onChange({ ...data, category: e.target.value })}>
-              <option value="A">A — Star</option>
-              <option value="B">B — Good</option>
-              <option value="C">C — Regular</option>
+              <option value="A">A — Premium</option>
+              <option value="B">B — Pro</option>
+              <option value="C">C — Good</option>
             </select>
           </div>
         </div>
         <div className="form-row">
           <label className="form-label">Base Price (pts)</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             className="form-input"
-            value={data.basePrice}
-            min={10}
-            max={500}
-            onChange={e => onChange({ ...data, basePrice: parseInt(e.target.value) || data.basePrice })}
+            value={priceStr}
+            onChange={handlePriceChange}
           />
         </div>
         <div className="modal-btns">
-          <button className="btn-primary" onClick={onSave}>💾 Save Changes</button>
+          <button className="btn-primary" onClick={handleSave}>💾 Save Changes</button>
           <button className="btn-danger" onClick={onClose}>Cancel</button>
         </div>
       </div>

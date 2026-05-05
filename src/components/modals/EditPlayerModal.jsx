@@ -15,16 +15,16 @@ export default function EditPlayerModal({ data, onChange, onSave, onClose }) {
           <div className="form-row">
             <label className="form-label">Category</label>
             <select className="form-input" value={data.category} onChange={(e) => onChange({ ...data, category: e.target.value })}>
-              <option value="A">A — Star</option>
-              <option value="B">B — Good</option>
-              <option value="C">C — Regular</option>
+              <option value="A">A — Premium</option>
+              <option value="B">B — Pro</option>
+              <option value="C">C — Good</option>
             </select>
           </div>
           <div className="form-row">
             <label className="form-label">Role</label>
             <select className="form-input" value={data.role} onChange={(e) => onChange({ ...data, role: e.target.value })}>
               <option value="BAT">🏏 Batsman</option>
-              <option value="BWL">🎯 Bowler</option>
+              <option value="BWL">⚾ Bowler</option>
               <option value="AR">⚡ All-Rounder</option>
               <option value="WK">🧤 Keeper</option>
             </select>

@@ -1,18 +1,10 @@
-import { useState, useEffect } from 'react';
-
-// Constants
-import { DEFAULT_TEAMS, DUMMY_PLAYERS } from './constants/data';
+import { useState, useEffect, useCallback } from 'react';
 import { CSS } from './constants/styles';
-
-// Utils & hooks
-import {
-  getInitialState, generateId,
-  getTeamRemaining, getTeamCatACount,
-  playSoldSound,
-} from './utils/helpers';
+import { getTeamRemaining, getTeamCatACount, playSoldSound } from './utils/helpers';
 import { useToast } from './hooks/useToast';
+import * as api from './api/auctionApi';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
-// Components
 import Confetti        from './components/Confetti';
 import ToastContainer  from './components/ToastContainer';
 import Sidebar         from './components/Sidebar';
@@ -20,7 +12,6 @@ import ResetModal      from './components/modals/ResetModal';
 import EditPlayerModal from './components/modals/EditPlayerModal';
 import RegEditModal    from './components/modals/RegEditModal';
 
-// Pages
 import DashboardPage   from './pages/DashboardPage';
 import AuctionPage     from './pages/AuctionPage';
 import PlayersPage     from './pages/PlayersPage';
@@ -29,126 +20,76 @@ import StatsPage       from './pages/StatsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import RegisteredPage  from './pages/RegisteredPage';
 
-export default function App() {
-  const [state,           setState]           = useState(getInitialState);
+const EMPTY_STATE = {
+  teams: [], players: [], queue: [],
+  currentBid: { playerId: null, amount: 0, leadingTeamId: null },
+  activeQueueTab: 'BAT', recentResults: [],
+};
+
+const POLL_INTERVAL = 3000;
+
+function AppInner() {
+  const { isAdmin } = useAuth();
+
+  const [state,           setState]           = useState(EMPTY_STATE);
+  const [loading,         setLoading]         = useState(true);
   const [currentPage,     setCurrentPage]     = useState('dashboard');
   const [theme,           setTheme]           = useState('dark');
   const [confettiTrigger, setConfettiTrigger] = useState(0);
   const { toasts, toast } = useToast();
 
-  // Persist state
-  useEffect(() => {
-    try { localStorage.setItem('vcl_state', JSON.stringify(state)); } catch (e) {}
-  }, [state]);
+  const loadState = useCallback(async (silent = false) => {
+    try {
+      const s = await api.getFullState();
+      setState(s);
+    } catch (e) {
+      if (!silent) toast('Could not connect to backend: ' + e.message, 'error');
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
 
-  // ── Core helpers ──────────────────────────────────────────
+  useEffect(() => { loadState(false); }, [loadState]);
+
+  useEffect(() => {
+    const timer = setInterval(() => loadState(true), POLL_INTERVAL);
+    return () => clearInterval(timer);
+  }, [loadState]);
+
   const getTeam   = (id) => state.teams.find((t) => t.id === id);
   const getPlayer = (id) => state.players.find((p) => p.id === id);
 
-  const updateState = (updater) => setState((prev) => {
-    const next = JSON.parse(JSON.stringify(prev));
-    updater(next);
-    return next;
-  });
+  const navigate    = (page) => setCurrentPage(page);
+  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 
-  // ── Navigation & theme ────────────────────────────────────
-  const navigate     = (page) => setCurrentPage(page);
-  const toggleTheme  = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  const call = async (apiFn, successMsg, errorMsg) => {
+    if (!isAdmin) { toast('Admin access required', 'error'); return false; }
+    try {
+      const next = await apiFn();
+      if (next) setState(next);
+      if (successMsg) toast(successMsg, 'success');
+      return true;
+    } catch (e) { toast(errorMsg || e.message, 'error'); return false; }
+  };
 
-  // ── Reset ─────────────────────────────────────────────────
   const [showResetModal, setShowResetModal] = useState(false);
-  const doReset = () => {
-    const fresh = {
-      teams:        JSON.parse(JSON.stringify(DEFAULT_TEAMS)),
-      players:      JSON.parse(JSON.stringify(DUMMY_PLAYERS)),
-      queue:        DUMMY_PLAYERS.map((p) => p.id),
-      currentBid:   { playerId: null, amount: 0, leadingTeamId: null },
-      activeQueueTab: 'BAT',
-      recentResults: [],
-    };
-    setState(fresh);
-    setShowResetModal(false);
-    navigate('dashboard');
-    toast('Auction has been reset!', 'success');
-  };
-
-  // ── Auction actions ───────────────────────────────────────
-  const startBidding = (playerId) => {
-    updateState((s) => {
-      const p = s.players.find((pl) => pl.id === playerId);
-      if (!p || p.status !== 'pending') return;
-      s.currentBid = { playerId, amount: p.basePrice, leadingTeamId: null };
-    });
-    setSoldToTeamId('');
-  };
-
-  const reAuctionPlayer = (playerId) => {
-    updateState((s) => {
-      const p = s.players.find((pl) => pl.id === playerId);
-      if (!p) return;
-      p.status = 'pending';
-      if (!s.queue.includes(playerId)) s.queue.push(playerId);
-      s.activeQueueTab = p.role || 'BAT';
-      s.currentBid = { playerId, amount: p.basePrice, leadingTeamId: null };
-    });
-    setSoldToTeamId('');
-  };
-
-  const placeBid = (teamId) => {
-    const { playerId, amount } = state.currentBid;
-    const team   = getTeam(teamId);
-    const player = getPlayer(playerId);
-    if (!team || !player) return;
-    if (getTeamRemaining(team) < amount) { toast('Not enough points!', 'error'); return; }
-    if (player.category === 'A' && getTeamCatACount(team, state.players) >= 3) { toast('Category A limit (3) reached for ' + team.name, 'error'); return; }
-    updateState((s) => { s.currentBid.leadingTeamId = teamId; });
-    setSoldToTeamId(teamId);
-  };
-
-  const incrementBid = (amount) => {
-    updateState((s) => { s.currentBid.amount += amount; });
-  };
-
-  const addRecentResult = (s, playerId, teamId, amount, status) => {
-    if (!s.recentResults) s.recentResults = [];
-    s.recentResults.unshift({ playerId, teamId, amount, status, ts: Date.now() });
-    if (s.recentResults.length > 6) s.recentResults = s.recentResults.slice(0, 6);
+  const doReset = async () => {
+    await call(() => api.resetAuction().then(() => api.getFullState()), 'Auction has been reset!');
+    setShowResetModal(false); navigate('dashboard');
   };
 
   const [soldToTeamId, setSoldToTeamId] = useState('');
+  const startBidding    = (id)     => call(() => api.startBidding(id));
+  const reAuctionPlayer = (id)     => call(() => api.reAuction(id));
+  const placeBid        = async (teamId) => { const ok = await call(() => api.placeBid(teamId)); if (ok) setSoldToTeamId(teamId); };
+  const incrementBid    = (amt)    => call(() => api.incrementBid(amt));
 
-  const confirmSold = (teamId) => {
-    const { playerId, amount } = state.currentBid;
+  const confirmSold = async (teamId) => {
+    const { amount } = state.currentBid;
+    const player = getPlayer(state.currentBid.playerId);
     const team   = getTeam(teamId);
-    const player = getPlayer(playerId);
-    if (!team || !player) return;
-    if (getTeamRemaining(team) < amount) { toast('Not enough points for ' + team.name, 'error'); return; }
-    if (player.category === 'A' && getTeamCatACount(team, state.players) >= 3) { toast('Category A limit reached for ' + team.name, 'error'); return; }
-
-    const soldTab = state.activeQueueTab;
-    updateState((s) => {
-      const p = s.players.find((pl) => pl.id === playerId);
-      const t = s.teams.find((tm) => tm.id === teamId);
-      p.soldPrice = amount;
-      p.teamId    = teamId;
-      p.status    = 'sold';
-      t.pointsSpent += amount;
-      t.players.push(playerId);
-      s.queue = s.queue.filter((id) => id !== playerId);
-      addRecentResult(s, playerId, teamId, amount, 'sold');
-
-      const pendingInTab = s.queue.map((id) => s.players.find((pl) => pl.id === id)).filter((pl) => pl && pl.status === 'pending' && (pl.role || 'BAT') === soldTab);
-      if (pendingInTab.length > 0) {
-        s.currentBid = { playerId: pendingInTab[0].id, amount: pendingInTab[0].basePrice, leadingTeamId: null };
-      } else {
-        s.currentBid = { playerId: null, amount: 0, leadingTeamId: null };
-      }
-    });
-
-    if (amount >= 100) setConfettiTrigger((c) => c + 1);
-    playSoldSound();
-    toast(`🎉 ${player.name} → ${team.name} for ${amount} pts!`, 'success');
-    setSoldToTeamId('');
+    const ok = await call(() => api.confirmSold(teamId, amount), `🎉 ${player?.name} → ${team?.name} for ${amount} pts!`);
+    if (ok) { if (amount >= 100) setConfettiTrigger((c) => c + 1); playSoldSound(); setSoldToTeamId(''); }
   };
 
   const confirmSoldFromSelect = () => {
@@ -157,191 +98,101 @@ export default function App() {
     confirmSold(soldToTeamId);
   };
 
-  const markUnsold = () => {
-    const { playerId } = state.currentBid;
-    if (!playerId) return;
-    const p        = getPlayer(playerId);
-    const unsoldTab = state.activeQueueTab;
-    updateState((s) => {
-      const pl = s.players.find((pl) => pl.id === playerId);
-      pl.status = 'unsold';
-      s.queue   = s.queue.filter((id) => id !== playerId);
-      addRecentResult(s, playerId, null, 0, 'unsold');
-
-      const pendingInTab = s.queue.map((id) => s.players.find((pl2) => pl2.id === id)).filter((pl2) => pl2 && pl2.status === 'pending' && (pl2.role || 'BAT') === unsoldTab);
-      if (pendingInTab.length > 0) {
-        s.currentBid = { playerId: pendingInTab[0].id, amount: pendingInTab[0].basePrice, leadingTeamId: null };
-      } else {
-        s.currentBid = { playerId: null, amount: 0, leadingTeamId: null };
-      }
-    });
-    toast(`${p.name} marked as unsold.`, 'warning');
+  const markUnsold = async () => {
+    const player = getPlayer(state.currentBid.playerId);
+    await call(() => api.markUnsold(), `${player?.name} marked as unsold.`);
   };
 
-  const useRTM = (teamId) => {
-    const team = getTeam(teamId);
-    if (team.rtmUsed) { toast(team.name + ' has already used RTM!', 'error'); return; }
-    const { playerId, amount } = state.currentBid;
-    if (!playerId) { toast('No player on auction', 'error'); return; }
-    updateState((s) => {
-      const t = s.teams.find((tm) => tm.id === teamId);
-      t.rtmUsed = true;
-      s.currentBid.leadingTeamId = teamId;
-    });
-    toast(`⚡ ${team.name} used RTM! Matching ${amount} pts.`, 'warning');
-  };
+  const useRTM      = (teamId) => call(() => api.useRTM(teamId),      `⚡ ${getTeam(teamId)?.name} used RTM!`);
+  const useWildcard = (teamId) => call(() => api.useWildcard(teamId), `🃏 ${getTeam(teamId)?.name} used Wildcard!`);
+  const switchQueueTab = (key) => call(() => api.switchQueueTab(key));
 
-  const useWildcard = (teamId) => {
-    const team = getTeam(teamId);
-    const { playerId } = state.currentBid;
-    if (!playerId) { toast('No player on auction', 'error'); return; }
-    if (getTeamRemaining(team) < 50) { toast('Not enough points for wildcard!', 'error'); return; }
-    updateState((s) => {
-      s.currentBid.amount        = 50;
-      s.currentBid.leadingTeamId = teamId;
-    });
-    toast(`🃏 ${team.name} used Wildcard! Bid set to 50 pts.`, 'warning');
-  };
-
-  const addPlayerToQueue = (name, cat, role, price) => {
+  const addPlayerToQueue = async (name, cat, role, price) => {
     if (!name) { toast('Enter a player name', 'error'); return false; }
     if (price < 10 || price > 500) { toast('Price must be 10–500', 'error'); return false; }
-    const player = { id: generateId(), name, category: cat, role: role || 'BAT', basePrice: price, soldPrice: null, teamId: null, status: 'pending' };
-    updateState((s) => { s.players.push(player); s.queue.push(player.id); });
-    toast(`${name} added to queue!`, 'success');
-    return true;
+    return call(async () => { await api.addPlayer({ name, category: cat, role, basePrice: price }); return api.getFullState(); }, `${name} added to queue!`);
   };
 
-  // ── Player table state ────────────────────────────────────
   const [playerSearch,     setPlayerSearch]     = useState('');
   const [playerFilter,     setPlayerFilter]     = useState('ALL');
   const [playerRoleFilter, setPlayerRoleFilter] = useState('ALL');
+  const [editModal,        setEditModal]         = useState(null);
 
-  // ── Edit player modal ─────────────────────────────────────
-  const [editModal, setEditModal] = useState(null);
-
-  const openEditPlayer = (playerId) => {
-    const p = getPlayer(playerId);
-    if (!p) return;
-    setEditModal({ id: p.id, name: p.name, category: p.category, role: p.role || 'BAT', basePrice: p.basePrice });
+  const openEditPlayer = (id) => {
+    if (!isAdmin) return;
+    const p = getPlayer(id);
+    if (p) setEditModal({ id: p.id, name: p.name, category: p.category, role: p.role || 'BAT', basePrice: p.basePrice });
   };
-
-  const saveEditPlayer = () => {
+  const saveEditPlayer = async () => {
     if (!editModal.name.trim()) { toast('Name cannot be empty', 'error'); return; }
-    updateState((s) => {
-      const p = s.players.find((pl) => pl.id === editModal.id);
-      p.name      = editModal.name.trim();
-      p.category  = editModal.category;
-      p.role      = editModal.role;
-      p.basePrice = editModal.basePrice;
-    });
-    toast(`✏️ ${editModal.name} updated!`, 'success');
+    await call(async () => { await api.editPlayer(editModal.id, { name: editModal.name.trim(), category: editModal.category, role: editModal.role, basePrice: editModal.basePrice }); return api.getFullState(); }, `✏️ ${editModal.name} updated!`);
     setEditModal(null);
   };
-
-  const removePlayer = (playerId) => {
-    const p = getPlayer(playerId);
-    if (!p) return;
-    updateState((s) => {
-      const pl = s.players.find((pl) => pl.id === playerId);
-      if (pl.status === 'sold') {
-        const t = s.teams.find((tm) => tm.id === pl.teamId);
-        if (t) {
-          t.players     = t.players.filter((pid) => pid !== playerId);
-          t.pointsSpent = Math.max(0, t.pointsSpent - (pl.soldPrice || 0));
-        }
-      }
-      s.queue = s.queue.filter((id) => id !== playerId);
-      if (s.currentBid.playerId === playerId) s.currentBid = { playerId: null, amount: 0, leadingTeamId: null };
-      s.players = s.players.filter((pl) => pl.id !== playerId);
-    });
-    toast(`🗑 ${p.name} removed.`, 'warning');
+  const removePlayer = (id) => {
+    const p = getPlayer(id);
+    return call(async () => { await api.removePlayer(id); return api.getFullState(); }, `🗑 ${p?.name} removed.`);
   };
 
-  // ── Teams page state ──────────────────────────────────────
   const [teamsView, setTeamsView] = useState('list');
-
   const addNewTeam = (name, color, pts) => {
     if (!name) { toast('Enter a team name', 'error'); return false; }
-    if (state.teams.find((t) => t.name.toLowerCase() === name.toLowerCase())) { toast('Team name already exists!', 'error'); return false; }
-    const newTeam = { id: 'team_' + Date.now(), name, color, points: pts, pointsSpent: 0, players: [], rtmUsed: false };
-    updateState((s) => { s.teams.push(newTeam); });
-    toast(`🏆 Team "${name}" added!`, 'success');
-    return true;
+    return call(async () => { await api.addTeam({ name, color, points: pts }); return api.getFullState(); }, `🏆 Team "${name}" added!`);
   };
+  const deleteTeam = (id) => call(async () => { await api.deleteTeam(id); return api.getFullState(); }, 'Team deleted.');
 
-  const deleteTeam = (teamId) => {
-    const team = getTeam(teamId);
-    if (!team) return;
-    if (team.players.length > 0) { toast(`Cannot delete "${team.name}" — they have ${team.players.length} players. Release players first.`, 'error'); return; }
-    updateState((s) => { s.teams = s.teams.filter((t) => t.id !== teamId); });
-    toast('Team deleted.', 'warning');
-  };
+  const [registeredPlayers, setRegisteredPlayers] = useState([]);
+  const [regEditModal,      setRegEditModal]       = useState(null);
 
-  const switchQueueTab = (key) => updateState((s) => { s.activeQueueTab = key; });
+  const loadRegistered = useCallback(async () => { try { setRegisteredPlayers(await api.getRegistered()); } catch (e) {} }, []);
+  useEffect(() => { if (isAdmin) loadRegistered(); }, [loadRegistered, isAdmin]);
 
-  // ── Registered players ────────────────────────────────────
-  const [registeredPlayers, setRegisteredPlayers] = useState(() => {
-    try {
-      const saved = localStorage.getItem('vcl_registered');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) { return []; }
-  });
-
-  useEffect(() => {
-    try { localStorage.setItem('vcl_registered', JSON.stringify(registeredPlayers)); } catch (e) {}
-  }, [registeredPlayers]);
-
-  const [regEditModal, setRegEditModal] = useState(null);
-
-  const addRegisteredPlayer = (name, role, category, basePrice, phone) => {
+  const addRegisteredPlayer = async (name, role, category, basePrice, phone) => {
+    if (!isAdmin) return false;
     if (!name.trim()) { toast('Enter a player name', 'error'); return false; }
     if (basePrice < 10 || basePrice > 500) { toast('Base price must be 10–500', 'error'); return false; }
-    const player = {
-      id: 'reg_' + Date.now() + Math.random().toString(36).slice(2, 5),
-      name: name.trim(), role, category, basePrice, phone: phone.trim(),
-      registeredAt: new Date().toLocaleDateString('en-IN'),
-      addedToAuction: false,
-    };
-    setRegisteredPlayers((prev) => [...prev, player]);
-    toast(`✅ ${name} registered!`, 'success');
-    return true;
+    try { const r = await api.addRegistered({ name, role, category, basePrice, phone }); setRegisteredPlayers((p) => [...p, r]); toast(`✅ ${name} registered!`, 'success'); return true; }
+    catch (e) { toast(e.message, 'error'); return false; }
   };
-
-  const removeRegisteredPlayer = (id) => {
+  const removeRegisteredPlayer = async (id) => {
+    if (!isAdmin) return;
     const p = registeredPlayers.find((r) => r.id === id);
-    setRegisteredPlayers((prev) => prev.filter((r) => r.id !== id));
-    if (p) toast(`🗑 ${p.name} removed from registry.`, 'warning');
+    try { await api.removeRegistered(id); setRegisteredPlayers((prev) => prev.filter((r) => r.id !== id)); if (p) toast(`🗑 ${p.name} removed.`, 'warning'); }
+    catch (e) { toast(e.message, 'error'); }
   };
-
-  const saveRegEditPlayer = () => {
+  const saveRegEditPlayer = async () => {
     if (!regEditModal.name.trim()) { toast('Name cannot be empty', 'error'); return; }
-    setRegisteredPlayers((prev) => prev.map((r) => r.id === regEditModal.id ? { ...regEditModal, name: regEditModal.name.trim() } : r));
-    toast(`✏️ ${regEditModal.name} updated!`, 'success');
-    setRegEditModal(null);
+    try { const updated = await api.editRegistered(regEditModal.id, regEditModal); setRegisteredPlayers((prev) => prev.map((r) => r.id === updated.id ? updated : r)); toast(`✏️ ${updated.name} updated!`, 'success'); setRegEditModal(null); }
+    catch (e) { toast(e.message, 'error'); }
   };
-
-  const sendToAuction = (id) => {
+  const sendToAuction = async (id) => {
+    if (!isAdmin) return;
     const reg = registeredPlayers.find((r) => r.id === id);
-    if (!reg) return;
-    if (reg.addedToAuction) { toast(`${reg.name} is already in the auction queue!`, 'warning'); return; }
-    const ok = addPlayerToQueue(reg.name, reg.category, reg.role, reg.basePrice);
-    if (ok) {
+    if (reg?.addedToAuction) { toast(`${reg.name} is already in the auction queue!`, 'warning'); return; }
+    try {
+      await api.sendToAuction(id);
       setRegisteredPlayers((prev) => prev.map((r) => r.id === id ? { ...r, addedToAuction: true } : r));
-      toast(`⚡ ${reg.name} sent to auction queue!`, 'success');
-    }
+      setState(await api.getFullState());
+      toast(`⚡ ${reg?.name} sent to auction queue!`, 'success');
+    } catch (e) { toast(e.message, 'error'); }
   };
 
-  // ── Page meta ─────────────────────────────────────────────
   const pages = {
-    dashboard:   { title: 'Dashboard',           subtitle: 'Season Overview · All Teams' },
-    auction:     { title: 'Live Auction',         subtitle: 'Bidding Arena' },
-    players:     { title: 'All Players',          subtitle: 'Complete player registry' },
-    teams:       { title: 'Teams',                subtitle: 'Manage teams · View rosters' },
-    stats:       { title: 'Statistics',           subtitle: 'Auction analytics' },
-    leaderboard: { title: 'Leaderboard',          subtitle: 'Live standings' },
-    registered:  { title: 'Registered Players',   subtitle: 'Google Form Registrations · Categorize & Manage' },
+    dashboard:   { title: 'Dashboard',         subtitle: 'Season Overview · All Teams' },
+    auction:     { title: 'Live Auction',       subtitle: 'Bidding Arena' },
+    players:     { title: 'All Players',        subtitle: 'Complete player registry' },
+    teams:       { title: 'Teams',              subtitle: 'Manage teams · View rosters' },
+    stats:       { title: 'Statistics',         subtitle: 'Auction analytics' },
+    leaderboard: { title: 'Leaderboard',        subtitle: 'Live standings' },
+    registered:  { title: 'Registered Players', subtitle: 'Google Form Registrations · Categorize & Manage' },
   };
+
+  if (loading) return (
+    <><style>{CSS}</style>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#0f172a', color:'#fff', fontSize:20 }}>
+        🏏 Connecting to backend…
+      </div>
+    </>
+  );
 
   return (
     <>
@@ -349,101 +200,52 @@ export default function App() {
       <div className={theme} style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
         <Confetti trigger={confettiTrigger} />
         <ToastContainer toasts={toasts} />
-
-        {showResetModal && <ResetModal onConfirm={doReset} onClose={() => setShowResetModal(false)} />}
-        {editModal && (
-          <EditPlayerModal
-            data={editModal}
-            onChange={setEditModal}
-            onSave={saveEditPlayer}
-            onClose={() => setEditModal(null)}
-          />
-        )}
-        {regEditModal && (
-          <RegEditModal
-            data={regEditModal}
-            onChange={setRegEditModal}
-            onSave={saveRegEditPlayer}
-            onClose={() => setRegEditModal(null)}
-          />
-        )}
+        {isAdmin && showResetModal && <ResetModal onConfirm={doReset} onClose={() => setShowResetModal(false)} />}
+        {isAdmin && editModal    && <EditPlayerModal data={editModal}    onChange={setEditModal}    onSave={saveEditPlayer}    onClose={() => setEditModal(null)} />}
+        {isAdmin && regEditModal && <RegEditModal    data={regEditModal} onChange={setRegEditModal} onSave={saveRegEditPlayer} onClose={() => setRegEditModal(null)} />}
 
         <div className="app-shell">
           <Sidebar
-            currentPage={currentPage}
-            navigate={navigate}
-            onToggleTheme={toggleTheme}
-            theme={theme}
+            currentPage={currentPage} navigate={navigate}
+            onToggleTheme={toggleTheme} theme={theme}
             onReset={() => setShowResetModal(true)}
+            onPlayerRegistered={loadRegistered}
           />
-
           <main className="main-content">
             <div className="page-header">
               <div className="page-title">{pages[currentPage]?.title}</div>
               <div className="page-subtitle">
                 {currentPage === 'auction' && <span className="status-dot live" />}
                 {pages[currentPage]?.subtitle}
+                {/* Live indicator for viewers */}
+                {!isAdmin && (
+                  <span style={{ marginLeft: 10, fontSize: 11, color: '#22c55e', fontWeight: 700, background: 'rgba(34,197,94,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(34,197,94,0.3)' }}>
+                    🔴 LIVE
+                  </span>
+                )}
               </div>
             </div>
 
             <div className="page-content">
-              {currentPage === 'dashboard' && (
-                <DashboardPage
-                  state={state}
-                  getTeamRemaining={getTeamRemaining}
-                  getPlayer={getPlayer}
-                  onNavigate={navigate}
-                  onShowTeam={(id) => { setTeamsView(id); navigate('teams'); }}
-                />
-              )}
-              {currentPage === 'auction' && (
-                <AuctionPage
-                  state={state} getTeam={getTeam} getPlayer={getPlayer}
-                  getTeamRemaining={getTeamRemaining} getTeamCatACount={getTeamCatACount}
-                  onStartBidding={startBidding} onReAuction={reAuctionPlayer}
-                  onPlaceBid={placeBid} onIncrementBid={incrementBid}
-                  onConfirmSoldFromSelect={confirmSoldFromSelect} onMarkUnsold={markUnsold}
-                  onUseRTM={useRTM} onUseWildcard={useWildcard}
-                  onAddPlayer={addPlayerToQueue} onSwitchTab={switchQueueTab}
-                  soldToTeamId={soldToTeamId} setSoldToTeamId={setSoldToTeamId}
-                />
-              )}
-              {currentPage === 'players' && (
-                <PlayersPage
-                  state={state} getTeam={getTeam}
-                  playerSearch={playerSearch} setPlayerSearch={setPlayerSearch}
-                  playerFilter={playerFilter} setPlayerFilter={setPlayerFilter}
-                  playerRoleFilter={playerRoleFilter} setPlayerRoleFilter={setPlayerRoleFilter}
-                  onEdit={openEditPlayer} onRemove={removePlayer}
-                />
-              )}
-              {currentPage === 'teams' && (
-                <TeamsPage
-                  state={state} teamsView={teamsView} setTeamsView={setTeamsView}
-                  getTeam={getTeam} getPlayer={getPlayer}
-                  getTeamRemaining={getTeamRemaining}
-                  onAddTeam={addNewTeam} onDeleteTeam={deleteTeam}
-                />
-              )}
-              {currentPage === 'stats' && (
-                <StatsPage state={state} getTeam={getTeam} getTeamRemaining={getTeamRemaining} />
-              )}
-              {currentPage === 'leaderboard' && (
-                <LeaderboardPage state={state} getTeam={getTeam} getTeamRemaining={getTeamRemaining} getPlayer={getPlayer} />
-              )}
-              {currentPage === 'registered' && (
-                <RegisteredPage
-                  players={registeredPlayers}
-                  onAdd={addRegisteredPlayer}
-                  onRemove={removeRegisteredPlayer}
-                  onEdit={(p) => setRegEditModal({ ...p })}
-                  onSendToAuction={sendToAuction}
-                />
-              )}
+              {currentPage === 'dashboard'   && <DashboardPage   state={state} getTeamRemaining={getTeamRemaining} getPlayer={getPlayer} onNavigate={navigate} onShowTeam={(id) => { setTeamsView(id); navigate('teams'); }} />}
+              {currentPage === 'auction'     && <AuctionPage     state={state} getTeam={getTeam} getPlayer={getPlayer} getTeamRemaining={getTeamRemaining} getTeamCatACount={getTeamCatACount} onStartBidding={startBidding} onReAuction={reAuctionPlayer} onPlaceBid={placeBid} onIncrementBid={incrementBid} onConfirmSoldFromSelect={confirmSoldFromSelect} onMarkUnsold={markUnsold} onUseRTM={useRTM} onUseWildcard={useWildcard} onAddPlayer={addPlayerToQueue} onSwitchTab={switchQueueTab} soldToTeamId={soldToTeamId} setSoldToTeamId={setSoldToTeamId} isAdmin={isAdmin} />}
+              {currentPage === 'players'     && <PlayersPage     state={state} getTeam={getTeam} playerSearch={playerSearch} setPlayerSearch={setPlayerSearch} playerFilter={playerFilter} setPlayerFilter={setPlayerFilter} playerRoleFilter={playerRoleFilter} setPlayerRoleFilter={setPlayerRoleFilter} onEdit={openEditPlayer} onRemove={removePlayer} isAdmin={isAdmin} />}
+              {currentPage === 'teams'       && <TeamsPage       state={state} teamsView={teamsView} setTeamsView={setTeamsView} getTeam={getTeam} getPlayer={getPlayer} getTeamRemaining={getTeamRemaining} onAddTeam={addNewTeam} onDeleteTeam={deleteTeam} isAdmin={isAdmin} />}
+              {currentPage === 'stats'       && <StatsPage       state={state} getTeam={getTeam} getTeamRemaining={getTeamRemaining} />}
+              {currentPage === 'leaderboard' && <LeaderboardPage state={state} getTeam={getTeam} getTeamRemaining={getTeamRemaining} getPlayer={getPlayer} />}
+              {isAdmin && currentPage === 'registered' && <RegisteredPage players={registeredPlayers} onRemove={removeRegisteredPlayer} onEdit={async (p) => { try { const updated = await api.editRegistered(p.id, p); setRegisteredPlayers((prev) => prev.map((r) => r.id === updated.id ? updated : r)); toast(`✏️ ${updated.name} updated!`, 'success'); } catch (e) { toast(e.message, 'error'); } }} onSendToAuction={sendToAuction} />}
             </div>
           </main>
         </div>
       </div>
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
   );
 }

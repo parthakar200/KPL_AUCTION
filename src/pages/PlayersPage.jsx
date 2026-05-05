@@ -1,7 +1,7 @@
 import { getRoleInfo } from '../utils/helpers';
 
 export default function PlayersPage({
-  state, getTeam,
+  isAdmin, state, getTeam,
   playerSearch, setPlayerSearch,
   playerFilter, setPlayerFilter,
   playerRoleFilter, setPlayerRoleFilter,
@@ -97,8 +97,10 @@ export default function PlayersPage({
                   <td style={{ color: statusColor, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, whiteSpace: 'nowrap' }}>{statusIcon} {p.status}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>
+                      {isAdmin && <>
                       <button onClick={() => onEdit(p.id)} style={{ background: 'var(--accent-glow)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '5px 10px', borderRadius: 5, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>✏️ Edit</button>
                       <button onClick={() => onRemove(p.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: 'var(--cat-a)', padding: '5px 10px', borderRadius: 5, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>🗑 Remove</button>
+                      </>}
                     </div>
                   </td>
                 </tr>

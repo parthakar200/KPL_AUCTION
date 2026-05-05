@@ -41,7 +41,7 @@ export default function DashboardPage({ state, getTeamRemaining, getPlayer, onNa
         })}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
         <div className="card">
           <div className="card-title">Rules &amp; Limits</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: 'var(--text-dim)' }}>

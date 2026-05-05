@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { TEAM_COLORS } from '../constants/data';
 
-export default function TeamsPage({ state, teamsView, setTeamsView, getTeam, getPlayer, getTeamRemaining, onAddTeam, onDeleteTeam }) {
+export default function TeamsPage({ isAdmin, state, teamsView, setTeamsView, getTeam, getPlayer, getTeamRemaining, onAddTeam, onDeleteTeam }) {
   const [newName,  setNewName]  = useState('');
   const [newColor, setNewColor] = useState('#f97316');
   const [newPts,   setNewPts]   = useState(1000);
@@ -91,7 +92,7 @@ export default function TeamsPage({ state, teamsView, setTeamsView, getTeam, get
   // ── Teams list view ───────────────────────────────────────
   return (
     <>
-      <div className="card" style={{ marginBottom: 20 }}>
+      {isAdmin && <div className="card" style={{ marginBottom: 20 }}>
         <div className="card-title">➕ Add New Team</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: 2, minWidth: 160 }}>
@@ -110,7 +111,7 @@ export default function TeamsPage({ state, teamsView, setTeamsView, getTeam, get
           </div>
           <button className="btn-primary" onClick={handleAdd} style={{ flex: 'none', width: 'auto', padding: '10px 20px', whiteSpace: 'nowrap' }}>+ Add Team</button>
         </div>
-      </div>
+      </div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
         {state.teams.length === 0 ? (
@@ -125,7 +126,7 @@ export default function TeamsPage({ state, teamsView, setTeamsView, getTeam, get
             <div key={t.id} className="team-card" style={{ '--team-color': t.color }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div className="team-name" style={{ color: t.color, marginBottom: 0 }}>{t.name}</div>
-                <button onClick={() => onDeleteTeam(t.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 16, cursor: 'pointer', padding: '2px 6px', borderRadius: 4 }}>🗑</button>
+                {isAdmin && <button onClick={() => onDeleteTeam(t.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 16, cursor: 'pointer', padding: '2px 6px', borderRadius: 4 }}>🗑</button>}
               </div>
               <div className="team-stats" style={{ marginBottom: 12 }}>
                 <div><div className="stat-label">Budget</div><div className="stat-value" style={{ fontSize: 16 }}>{t.points}</div></div>
@@ -151,3 +152,4 @@ export default function TeamsPage({ state, teamsView, setTeamsView, getTeam, get
     </>
   );
 }
+

@@ -28,7 +28,7 @@ export default function StatsPage({ state, getTeam, getTeamRemaining }) {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
         <div className="card">
           <div className="card-title">Team Spending Breakdown</div>
           {state.teams.map((t) => (

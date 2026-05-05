@@ -1,8 +1,11 @@
+
+
+
 import { useState } from 'react';
 import { QUEUE_TABS } from '../constants/data';
 import { getRoleInfo } from '../utils/helpers';
 
-function BiddingDisplay({
+function BiddingDisplay({ isAdmin,
   player, amount, leadTeam, leadingTeamId, teams,
   getTeamRemaining, getTeamCatACount, players,
   onPlaceBid, onIncrementBid, onConfirmSoldFromSelect, onMarkUnsold,
@@ -24,22 +27,24 @@ function BiddingDisplay({
         Base Price: <strong style={{ color: 'var(--text)' }}>{player.basePrice} pts</strong>
       </div>
 
-      {/* Step 1 */}
+      {/* Step 1 — visible to all, increment buttons only for admin */}
       <div style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 10, padding: 14, marginBottom: 14 }}>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 800, marginBottom: 10 }}>Step 1 — Current Bid Amount</div>
+        <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 800, marginBottom: 10 }}>Current Bid Amount</div>
         <div className="bid-amount" style={{ fontSize: 48, marginBottom: 4 }}>{amount} <span style={{ fontSize: 18, color: 'var(--text-muted)' }}>pts</span></div>
         <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 12 }}>
-          {leadTeam ? <>🔥 Leader: <strong style={{ color: leadTeam.color }}>{leadTeam.name}</strong></> : '⏳ No bid yet — select a team below'}
+          {leadTeam ? <>🔥 Leader: <strong style={{ color: leadTeam.color }}>{leadTeam.name}</strong></> : '⏳ No bid yet'}
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {[5, 10, 25, 50].map((n) => <button key={n} className="inc-btn" onClick={() => onIncrementBid(n)}>+{n}</button>)}
-        </div>
+        {isAdmin && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {[5, 10, 25, 50].map((n) => <button key={n} className="inc-btn" onClick={() => onIncrementBid(n)}>+{n}</button>)}
+          </div>
+        )}
       </div>
 
-      {/* Step 2 */}
-      <div style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 10, padding: 14, marginBottom: 14 }}>
+      {/* Step 2 — admin clicks to bid, viewers just see who is leading */}
+      {isAdmin && <div style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 10, padding: 14, marginBottom: 14 }}>
         <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 800, marginBottom: 10 }}>Step 2 — Which Team is Bidding?</div>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(teams.length, 4)}, 1fr)`, gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(teams.length, 2)}, minmax(0,1fr))`, gap: 8 }}>
           {teams.map((t) => {
             const rem       = getTeamRemaining(t);
             const catAFull  = getTeamCatACount(t, players) >= 3 && player.category === 'A';
@@ -57,9 +62,10 @@ function BiddingDisplay({
             );
           })}
         </div>
-      </div>
+      </div>}
 
-      {/* Step 3 */}
+      {/* Step 3 — admin only */}
+      {isAdmin && (
       <div style={{ background: '#22c55e12', border: '2px solid #22c55e44', borderRadius: 10, padding: 14, marginBottom: 14 }}>
         <div style={{ fontSize: 10, color: 'var(--cat-c)', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 800, marginBottom: 10 }}>Step 3 — Confirm Sale</div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 }}>Choose which team gets this player:</div>
@@ -72,8 +78,10 @@ function BiddingDisplay({
           <button onClick={onMarkUnsold} style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: 12, borderRadius: 8, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', fontFamily: 'var(--font-body)', cursor: 'pointer' }}>✗ Unsold</button>
         </div>
       </div>
+      )}
 
-      {/* Special actions */}
+      {/* Special actions — admin only */}
+      {isAdmin && (
       <div style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
         <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 800, marginBottom: 8 }}>Special Actions</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
@@ -91,11 +99,12 @@ function BiddingDisplay({
           ))}
         </div>
       </div>
+      )}
     </>
   );
 }
 
-export default function AuctionPage({
+export default function AuctionPage({ isAdmin,
   state, getTeam, getPlayer, getTeamRemaining, getTeamCatACount,
   onStartBidding, onReAuction, onPlaceBid, onIncrementBid,
   onConfirmSoldFromSelect, onMarkUnsold, onUseRTM, onUseWildcard,
@@ -155,7 +164,7 @@ export default function AuctionPage({
                 teams={state.teams} getTeamRemaining={getTeamRemaining} getTeamCatACount={getTeamCatACount}
                 players={state.players} onPlaceBid={onPlaceBid} onIncrementBid={onIncrementBid}
                 onConfirmSoldFromSelect={onConfirmSoldFromSelect} onMarkUnsold={onMarkUnsold}
-                onUseRTM={onUseRTM} onUseWildcard={onUseWildcard}
+                onUseRTM={onUseRTM} onUseWildcard={onUseWildcard} isAdmin={isAdmin}
                 soldToTeamId={soldToTeamId} setSoldToTeamId={setSoldToTeamId}
               />
             )}
@@ -197,14 +206,15 @@ export default function AuctionPage({
 
       {/* RIGHT */}
       <div className="auction-sidebar-panel">
-        {/* Add player form */}
+        {/* Add player form - admin only */}
+        {isAdmin && (
         <div className="card add-player-form">
           <div className="card-title">Add Player to Queue</div>
           <div className="form-row">
             <label className="form-label">Player Name</label>
             <input className="form-input" placeholder="e.g. Ravi Kumar" value={newName} onChange={(e) => setNewName(e.target.value)} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
             <div className="form-row">
               <label className="form-label">Category</label>
               <select className="form-input" value={newCat} onChange={(e) => setNewCat(e.target.value)}>
@@ -229,6 +239,7 @@ export default function AuctionPage({
           </div>
           <button className="btn-primary" onClick={handleAddPlayer}>+ Add to Queue</button>
         </div>
+        )}
 
         {/* Tabbed queue */}
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -263,8 +274,8 @@ export default function AuctionPage({
                 const canReauction = state.activeQueueTab === 'UNSOLD';
                 return (
                   <div key={p.id} className={`queue-item${isActive ? ' auctioning' : ''}`}
-                    style={{ borderLeft: isActive ? `3px solid ${ri.color}` : '3px solid transparent', background: isActive ? ri.bg : undefined }}
-                    onClick={() => canReauction ? onReAuction(p.id) : onStartBidding(p.id)}>
+                    style={{ borderLeft: isActive ? `3px solid ${ri.color}` : '3px solid transparent', background: isActive ? ri.bg : undefined, cursor: isAdmin ? 'pointer' : 'default' }}
+                    onClick={() => isAdmin && (canReauction ? onReAuction(p.id) : onStartBidding(p.id))}>
                     <span className={`cat-dot ${p.category}`} />
                     <span className="queue-item-name" style={{ fontSize: 13 }}>{p.name}</span>
                     <span className={`category-chip ${p.category}`} style={{ fontSize: 9, padding: '1px 5px' }}>{p.category}</span>
@@ -281,3 +292,4 @@ export default function AuctionPage({
     </div>
   );
 }
+
