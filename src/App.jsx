@@ -189,7 +189,7 @@ function AppInner() {
   if (loading) return (
     <><style>{CSS}</style>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#0f172a', color:'#fff', fontSize:20 }}>
-        🏏 Connecting to backend…
+        🏏 Loading Please wait…
       </div>
     </>
   );

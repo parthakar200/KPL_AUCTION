@@ -119,7 +119,7 @@ export default function LoginModal({ onClose, onPlayerRegistered }) {
                 {/* Name */}
                 <div style={{ marginBottom:12 }}>
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:1, color:'var(--text-muted)', marginBottom:4 }}>Full Name *</label>
-                  <input className="form-input" placeholder="e.g. Ravi Kumar"
+                  <input className="form-input" placeholder="Player Name..."
                     value={pName} onChange={(e) => { setPName(e.target.value); setRegErr(''); }}
                     onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
                     style={{ width:'100%', boxSizing:'border-box' }} autoFocus />
@@ -140,7 +140,7 @@ export default function LoginModal({ onClose, onPlayerRegistered }) {
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                     {[
                       { key:'BAT', icon:'🏏', label:'Batsman',      color:'#f59e0b' },
-                      { key:'BWL', icon:'🎯', label:'Bowler',        color:'#3b82f6' },
+                      { key:'BWL', icon:'⚾', label:'Bowler',        color:'#3b82f6' },
                       { key:'AR',  icon:'⚡', label:'All-Rounder',   color:'#a855f7' },
                       { key:'WK',  icon:'🧤', label:'Wicket Keeper', color:'#22c55e' },
                     ].map((r) => (

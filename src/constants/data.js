@@ -30,7 +30,7 @@ export const DUMMY_PLAYERS = [
 
 export const QUEUE_TABS = [
   { key: "BAT",    label: "🏏 Batsmen",      color: "#f59e0b" },
-  { key: "BWL",    label: "🎯 Bowlers",      color: "#3b82f6" },
+  { key: "BWL",    label: "⚾ Bowlers",      color: "#3b82f6" },
   { key: "AR",     label: "⚡ All-Rounders", color: "#a855f7" },
   { key: "WK",     label: "🧤 Keepers",      color: "#22c55e" },
   { key: "UNSOLD", label: "↩ Unsold",        color: "#ef4444" },
@@ -38,7 +38,7 @@ export const QUEUE_TABS = [
 
 export const ROLE_INFO = {
   BAT: { label: "Batsman",     icon: "🏏", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.3)" },
-  BWL: { label: "Bowler",      icon: "🎯", color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.3)" },
+  BWL: { label: "Bowler",      icon: "⚾", color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.3)" },
   AR:  { label: "All-Rounder", icon: "⚡", color: "#a855f7", bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.3)" },
   WK:  { label: "Keeper",      icon: "🧤", color: "#22c55e", bg: "rgba(34,197,94,0.12)",  border: "rgba(34,197,94,0.3)"  },
 };

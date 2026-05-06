@@ -38,7 +38,7 @@ export default function PlayersPage({
           {[
             { key: 'ALL', label: 'All Roles' },
             { key: 'BAT', label: '🏏 Bat' },
-            { key: 'BWL', label: '🎯 Bowl' },
+            { key: 'BWL', label: '⚾ Bowl' },
             { key: 'AR',  label: '⚡ AR' },
             { key: 'WK',  label: '🧤 WK' },
           ].map((r) => (

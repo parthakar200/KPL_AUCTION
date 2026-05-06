@@ -19,7 +19,7 @@ function AssignPanel({ player, onSave, onClose }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
           {[
             { key: 'BAT', icon: '🏏', label: 'Bat',   color: '#f59e0b' },
-            { key: 'BWL', icon: '🎯', label: 'Bowl',  color: '#3b82f6' },
+            { key: 'BWL', icon: '⚾', label: 'Bowl',  color: '#3b82f6' },
             { key: 'AR',  icon: '⚡', label: 'AR',    color: '#a855f7' },
             { key: 'WK',  icon: '🧤', label: 'WK',    color: '#22c55e' },
           ].map((r) => (
@@ -37,9 +37,9 @@ function AssignPanel({ player, onSave, onClose }) {
         <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--text-muted)', marginBottom: 6 }}>Category</label>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
           {[
-            { key: 'A', label: '⭐ A — Star',    color: 'var(--cat-a)', hint: '≥ 100 pts' },
-            { key: 'B', label: '👍 B — Good',    color: 'var(--cat-b)', hint: '50–99 pts' },
-            { key: 'C', label: '✅ C — Regular', color: 'var(--cat-c)', hint: '10–49 pts' },
+            { key: 'A', label: '⭐ A — Premium',    color: 'var(--cat-a)', hint: '≥ 100 pts' },
+            { key: 'B', label: '👌 B — Pro',    color: 'var(--cat-b)', hint: '50–99 pts' },
+            { key: 'C', label: '👍 C — Good', color: 'var(--cat-c)', hint: '10–49 pts' },
           ].map((c) => (
             <button key={c.key} onClick={() => setCategory(c.key)}
               style={{ padding: '8px 6px', borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 11, border: `2px solid ${category === c.key ? c.color : 'var(--border)'}`, background: category === c.key ? c.color + '18' : 'transparent', color: category === c.key ? c.color : 'var(--text-dim)', transition: 'all 0.15s', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
@@ -92,7 +92,7 @@ export default function RegisteredPage({ players, onRemove, onEdit, onSendToAuct
   const [editingId,  setEditingId]  = useState(null); // player id whose panel is open
 
   const roleColors = { BAT: '#f59e0b', BWL: '#3b82f6', AR: '#a855f7', WK: '#22c55e' };
-  const roleLabels = { BAT: '🏏 Batsmen', BWL: '🎯 Bowlers', AR: '⚡ All-Rounders', WK: '🧤 Keepers' };
+  const roleLabels = { BAT: '🏏 Batsmen', BWL: '⚾ Bowlers', AR: '⚡ All-Rounders', WK: '🧤 Keepers' };
 
   const filtered = players
     .filter((p) => {
@@ -173,7 +173,7 @@ export default function RegisteredPage({ players, onRemove, onEdit, onSendToAuct
 
       {/* Role filter */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-        {[['ALL','All Roles','var(--accent)'],['BAT','🏏 Bat','#f59e0b'],['BWL','🎯 Bowl','#3b82f6'],['AR','⚡ AR','#a855f7'],['WK','🧤 WK','#22c55e']].map(([key, label, col]) => (
+        {[['ALL','All Roles','var(--accent)'],['BAT','🏏 Bat','#f59e0b'],['BWL','⚾ Bowl','#3b82f6'],['AR','⚡ AR','#a855f7'],['WK','🧤 WK','#22c55e']].map(([key, label, col]) => (
           <button key={key} onClick={() => setFilterRole(key)}
             style={{ padding: '6px 12px', borderRadius: 6, fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, border: `1px solid ${filterRole === key ? col : 'var(--border)'}`, background: filterRole === key ? col + '22' : 'var(--bg-card)', color: filterRole === key ? col : 'var(--text-dim)', cursor: 'pointer', transition: 'all 0.15s' }}>
             {label} <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.7 }}>({key === 'ALL' ? players.length : players.filter((p) => p.role === key).length})</span>
@@ -183,7 +183,7 @@ export default function RegisteredPage({ players, onRemove, onEdit, onSendToAuct
 
       {/* Category filter */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
-        {[['ALL','All Categories','var(--accent)'],['A','⭐ A Star','var(--cat-a)'],['B','👍 B Good','var(--cat-b)'],['C','✅ C Regular','var(--cat-c)']].map(([key, label, col]) => (
+        {[['ALL','All Categories','var(--accent)'],['A','⭐ Premium','var(--cat-a)'],['B','👌 Pro','var(--cat-b)'],['C','👍 Good','var(--cat-c)']].map(([key, label, col]) => (
           <button key={key} onClick={() => setFilterCat(key)}
             style={{ padding: '5px 11px', borderRadius: 6, fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, border: `1px solid ${filterCat === key ? col : 'var(--border)'}`, background: filterCat === key ? col + '22' : 'var(--bg-card)', color: filterCat === key ? col : 'var(--text-dim)', cursor: 'pointer', transition: 'all 0.15s' }}>
             {label}

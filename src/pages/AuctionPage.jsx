@@ -16,7 +16,7 @@ function BiddingDisplay({ isAdmin,
     <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
         <span className={`category-chip ${player.category}`} style={{ fontSize: 12 }}>
-          {player.category} — {player.category === 'A' ? '⭐ Star' : player.category === 'B' ? '👍 Good' : '✅ Regular'}
+          {player.category} — {player.category === 'A' ? '⭐ Premium' : player.category === 'B' ? '👍 Pro' : '✅ Good'}
         </span>
         <span style={{ background: ri.bg, color: ri.color, border: `1px solid ${ri.border}`, padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>
           {ri.icon} {ri.label}
@@ -212,22 +212,22 @@ export default function AuctionPage({ isAdmin,
           <div className="card-title">Add Player to Queue</div>
           <div className="form-row">
             <label className="form-label">Player Name</label>
-            <input className="form-input" placeholder="e.g. Ravi Kumar" value={newName} onChange={(e) => setNewName(e.target.value)} />
+            <input className="form-input" placeholder="Enter Name..." value={newName} onChange={(e) => setNewName(e.target.value)} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
             <div className="form-row">
               <label className="form-label">Category</label>
               <select className="form-input" value={newCat} onChange={(e) => setNewCat(e.target.value)}>
-                <option value="A">A — Star</option>
-                <option value="B">B — Good</option>
-                <option value="C">C — Regular</option>
+                <option value="A">A — Premium</option>
+                <option value="B">B — Pro</option>
+                <option value="C">C — Good</option>
               </select>
             </div>
             <div className="form-row">
               <label className="form-label">Role</label>
               <select className="form-input" value={newRole} onChange={(e) => setNewRole(e.target.value)}>
                 <option value="BAT">🏏 Batsman</option>
-                <option value="BWL">🎯 Bowler</option>
+                <option value="BWL">⚾ Bowler</option>
                 <option value="AR">⚡ All-Rounder</option>
                 <option value="WK">🧤 Keeper</option>
               </select>
