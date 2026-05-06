@@ -46,14 +46,14 @@ export default function PlayersPage({
           value={playerSearch}
           onChange={(e) => setPlayerSearch(e.target.value)}
         />
-        <div className="filter-btns">
+        <div className="filter-btns" style={{ flexWrap: 'wrap' }}>
           {['ALL', 'A', 'B', 'C'].map((cat) => (
             <button key={cat} className={`filter-btn ${cat}${playerFilter === cat ? ' active' : ''}`} onClick={() => setPlayerFilter(cat)}>
               {cat === 'ALL' ? 'All' : cat}
             </button>
           ))}
         </div>
-        <div className="filter-btns">
+        <div className="filter-btns" style={{ flexWrap: 'wrap' }}>
           {[
             { key: 'ALL', label: 'All Roles' },
             { key: 'BAT', label: '🏏 Bat' },
