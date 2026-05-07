@@ -1,4 +1,38 @@
+
+
 import { ROLE_INFO, DEFAULT_TEAMS, DUMMY_PLAYERS } from '../constants/data';
+
+/**
+ * Compresses an image File to a base64 JPEG data URI.
+ * Resizes longest side to max 800px at 80% quality → ~50-150KB output
+ * regardless of original file size. Keeps API payloads fast.
+ */
+export function compressPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const MAX = 800;
+        let { width, height } = img;
+        if (width > height) {
+          if (width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+        } else {
+          if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 export const getRoleInfo = (role) => ROLE_INFO[role] || ROLE_INFO['BAT'];
 
