@@ -1,6 +1,6 @@
 
 import { useRef } from 'react';
-import { compressPhoto } from '../utils/helpers';
+import { compressPhoto } from '../../utils/helpers';
 
 export default function EditPlayerModal({ data, onChange, onSave, onClose }) {
   const photoInputRef = useRef(null);
