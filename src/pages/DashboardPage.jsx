@@ -26,7 +26,7 @@ export default function DashboardPage({ state, getTeamRemaining, getPlayer, onNa
                   <div className="stat-label">Players Bought</div>
                   <div className="stat-value" style={{ color: warnNeeded ? 'var(--gold)' : 'var(--cat-c)' }}>
                     {playerCount}
-                    {warnNeeded && <span className="warning-badge">⚠ Need {10 - playerCount}</span>}
+                    {warnNeeded && <span className="warning-badge">⚠ Need {15 - playerCount}</span>}
                   </div>
                 </div>
               </div>
