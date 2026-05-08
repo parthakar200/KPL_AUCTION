@@ -188,7 +188,7 @@ export default function AuctionPage({ isAdmin,
             {!currentPlayer ? (
               <div className="empty-state">
                 <div className="empty-state-icon">🏏</div>
-                <div className="empty-state-text">Pick a role tab below → tap a player to start bidding</div>
+                <div className="empty-state-text">Auction not started yet - expected Date & Time : 09/05/2026 03.30pm</div>
               </div>
             ) : (
               <BiddingDisplay
