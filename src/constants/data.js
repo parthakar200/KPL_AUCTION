@@ -1,8 +1,7 @@
 export const DEFAULT_TEAMS = [
-  { id: "t1", name: "Kings XI",     color: "#f97316", points: 1000, pointsSpent: 0, players: [], rtmUsed: false },
-  { id: "t2", name: "Royal Tigers", color: "#a855f7", points: 1000, pointsSpent: 0, players: [], rtmUsed: false },
-  { id: "t3", name: "Blue Warriors",color: "#06b6d4", points: 1000, pointsSpent: 0, players: [], rtmUsed: false },
-  { id: "t4", name: "Red Eagles",   color: "#ec4899", points: 1000, pointsSpent: 0, players: [], rtmUsed: false },
+  { id: "t1", name: "Bapi XI",     color: "#f97316", points: 1500, pointsSpent: 0, players: [], rtmUsed: false },
+  { id: "t2", name: "Bhajana Tigers", color: "#a855f7", points: 1500, pointsSpent: 0, players: [], rtmUsed: false },
+  { id: "t3", name: "Hadua 11",   color: "#ec4899", points: 1500, pointsSpent: 0, players: [], rtmUsed: false },
 ];
 
 export const DUMMY_PLAYERS = [
