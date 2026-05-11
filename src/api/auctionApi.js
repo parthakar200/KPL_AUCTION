@@ -53,7 +53,7 @@ const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 async function req(method, path, body) {
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+    headers: { 'Content-Type': 'application/json'},
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
