@@ -69,6 +69,7 @@ export const resetAuction    = ()           => req('POST', '/reset');
 
 export const getTeams        = ()           => req('GET',    '/teams');
 export const addTeam         = (body)       => req('POST',   '/teams', body);
+export const editTeam        = (id, body)   => req('PUT',    `/teams/${id}`, body);
 export const deleteTeam      = (id)         => req('DELETE', `/teams/${id}`);
 
 export const getPlayers      = ()           => req('GET',    '/players');

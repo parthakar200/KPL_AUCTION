@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { TEAM_COLORS } from '../constants/data';
+import { editTeam } from '../api/auctionApi';
 
 export default function TeamsPage({ isAdmin, state, teamsView, setTeamsView, getTeam, getPlayer, getTeamRemaining, onAddTeam, onEditTeam, onDeleteTeam }) {
   const [newName,  setNewName]  = useState('');
